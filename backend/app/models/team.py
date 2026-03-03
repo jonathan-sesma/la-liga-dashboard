@@ -7,3 +7,4 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     stadium = Column(String)
+    city = Column(String)

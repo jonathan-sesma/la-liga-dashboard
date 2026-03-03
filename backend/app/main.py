@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from .database import engine, Base, get_db
 from app.models.team import Team
 from sqlalchemy.orm import Session
+from app.api import teams
 
 app = FastAPI(
     title="La Liga Statistics API",
@@ -14,7 +15,4 @@ def root():
     return {"status": "ok", "message": "La Liga API is running"}
 
 Base.metadata.create_all(bind=engine)
-
-@app.get("/teams")
-def get_teams(db: Session = Depends(get_db)):
-    return db.query(Team).all()
+app.include_router(teams.router)
