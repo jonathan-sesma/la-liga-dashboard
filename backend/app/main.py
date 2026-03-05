@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .database import engine, Base
+from app.database import engine, Base
 from app.api import teams
 from contextlib import asynccontextmanager
 from app.api import teams
