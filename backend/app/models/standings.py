@@ -10,4 +10,3 @@ class Standings(Base):
     losses = Column(Integer)
     draws = Column(Integer)
     position = Column(Integer)
-    
