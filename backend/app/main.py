@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from app.database import engine, Base
-from app.api import teams
 from contextlib import asynccontextmanager
-from app.api import teams
+from app.routers import teams
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
