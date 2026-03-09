@@ -3,6 +3,7 @@ from pydantic import BaseModel
 class TeamBase(BaseModel):
     name: str
     city: str
+    stadium: str
 
 class TeamCreate(TeamBase):
     pass 
