@@ -25,3 +25,16 @@ async def get_live_matches():
     headers = {
         'x-apisports-key': API_KEY
     }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # We call the external endpoint to get live matches
+            response = await client.get(f"{BASE_URL}/fixtures?live=all", headers=headers)
+
+            # This checks if api-football returned an error status code (like 400 or 500)
+            response.raise_for_status()
+
+            return response.json()
+    
+        except httpx.HTTPStatusError:
+            raise HTTPException(status_code=response.status_code, detail="Error fetching live matches from API-Football")
