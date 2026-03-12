@@ -17,19 +17,19 @@
 
 import httpx
 from fastapi import HTTPException
+from app.config import settings
 
-API_KEY = "e26353a17d32f2366cc2f5e5ab5ea0f8"
-BASE_URL = "https://v3.football.api-sports.io"
+
 
 async def get_live_matches():
     headers = {
-        'x-apisports-key': API_KEY
+        'x-apisports-key': settings.FOOTBALL_API_KEY
     }
 
     async with httpx.AsyncClient() as client:
         try:
             # We call the external endpoint to get live matches
-            response = await client.get(f"{BASE_URL}/fixtures?live=all", headers=headers)
+            response = await client.get(f"{settings.FOOTBALL_API_URL}/fixtures?live=all", headers=headers)
 
             # This checks if api-football returned an error status code (like 400 or 500)
             response.raise_for_status()
