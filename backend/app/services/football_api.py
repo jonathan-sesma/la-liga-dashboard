@@ -27,15 +27,19 @@ async def get_and_sync_teams(db: Session, league_id: int):
 
             for item in data:
                 team_info = item["team"]
+
                 new_team = Team(
                     id=team_info["id"],
+                    league_id=league_id,
                     name=team_info["name"],
                     city=team_info["city"],
                     stadium=item["venue"]["name"]
                 )
+
                 db.add(new_team)
+                
             db.commit()
-            return db.query(Team).all()
+            return db.query(Team).filter(Team.league_id == league_id).all()
     
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=response.status_code, detail="Error fetching live matches from API-Football")
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=exc.response.status_code, detail="Error fetching live matches from API-Football")
