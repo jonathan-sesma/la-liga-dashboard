@@ -1,4 +1,5 @@
 import httpx
+import logging
 from fastapi import HTTPException
 from app.config import settings
 from sqlalchemy.orm import Session
@@ -13,7 +14,7 @@ async def get_and_sync_teams(db: Session, league_id: int):
 
     print("Fetching from API-Football...")
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2023"
+    url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2024"
 
     async with httpx.AsyncClient() as client:
         try:
@@ -43,3 +44,45 @@ async def get_and_sync_teams(db: Session, league_id: int):
     
         except httpx.HTTPStatusError as exc:
             raise HTTPException(status_code=exc.response.status_code, detail="Error fetching live matches from API-Football")
+        
+
+logger = logging.getLogger(__name__)
+
+async def sync_teams(db: Session, league_id: int):
+    logger.info("Syncing teams...")
+
+    async with httpx.AsyncClient() as client:
+        headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
+        url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2024"
+
+        try:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()["response"]
+
+            for item in data:
+                team_info = item["team"]
+
+                existing_team = db.query(Team).filter(Team.id == team_info["id"])
+
+                if existing_team:
+                    existing_team.name = team_info["name"]
+                    existing_team.city = team_info["city"]
+                    existing_team.stadium = item["venue"]["name"]
+                else:
+                    new_team = Team(
+                        id=team_info["id"],
+                        league_id=league_id,
+                        name=team_info["name"],
+                        city=team_info["city"],
+                        stadium=item["venue"]["name"]
+                    )
+                    db.add(new_team)
+
+            db.commit()
+            logger.info(f"Sync complete! Updated {len(data)} teams.")
+        
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"Error syncing teams from API-Football: {exc}")
+        except Exception as e:
+            logger.error(f"Unexpected error during team sync: {e}")

@@ -2,14 +2,21 @@ from fastapi import FastAPI
 from app.database import engine, Base
 from contextlib import asynccontextmanager
 from app.routers import teams
+from app.services.scheduler import sync_la_liga_data
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
     Base.metadata.create_all(bind=engine)
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(sync_la_liga_data, 'interval', hours=6)
+
     yield
     # Shutdown logic (optional)
-
+    scheduler.shutdown()
+    print("Scheduler shut down gracefully.")
+    
 app = FastAPI(
     title="La Liga Statistics API",
     description="Backend API for La Liga Statistics dashboard",

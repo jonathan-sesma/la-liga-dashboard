@@ -1,5 +1,5 @@
 from app.database import SessionLocal
-from app.services.football_api import get_and_sync_teams
+from app.services.football_api import sync_teams
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,7 +9,7 @@ async def sync_la_liga_data():
 
     db = SessionLocal()
     try:
-        await get_and_sync_teams(db=db, league_id=140)
+        await sync_teams(db=db, league_id=140)
         logger.info("Scheduled sync completed successfully.")
     except Exception as e:
         logger.error(f"Sync failed: {e}")
