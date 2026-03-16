@@ -8,3 +8,4 @@ class Team(Base):
     name = Column(String, unique=True, index=True)
     city = Column(String)
     stadium = Column(String)
+    league_id = Column(Integer, index=True)
