@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic (optional)
     scheduler.shutdown()
-    print("Scheduler shut down gracefully.")
+    logger.info("Scheduler shut down gracefully.")
 
 app = FastAPI(
     title="La Liga Statistics API",
@@ -36,4 +36,5 @@ app.include_router(teams.router)
 
 @app.get("/")
 def root():
+    logger.info("Root endpoint accessed.")
     return {"status": "ok", "message": "La Liga API is running"}

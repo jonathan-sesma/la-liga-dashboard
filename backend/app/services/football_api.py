@@ -1,5 +1,4 @@
 import json
-
 import httpx
 import logging
 from fastapi import HTTPException
@@ -64,8 +63,7 @@ async def sync_teams(db: Session, league_id: int):
             response.raise_for_status()
             data = response.json()["response"]
 
-            import json
-            print(json.dumps(data[0], indent=2)) # Debugging line to inspect the structure of the API response
+            logger.debug(f"API Response: {json.dumps(data[0], indent=2)}") # Debugging line to inspect the structure of the API response
 
             for item in data:
                 team_info = item["team"]
