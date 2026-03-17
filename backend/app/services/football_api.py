@@ -5,14 +5,15 @@ from app.config import settings
 from sqlalchemy.orm import Session
 from app.models import Team
 
+logger = logging.getLogger(__name__)
 async def get_and_sync_teams(db: Session, league_id: int):
     existing_teams = db.query(Team).filter(Team.league_id == league_id).all()
 
     if existing_teams:
-        print("Returning teams from Local Database")
+        logger.info("Returning teams from Local Database")
         return existing_teams
 
-    print("Fetching from API-Football...")
+    logger.info("Fetching from API-Football...")
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
     url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2024"
 
@@ -28,13 +29,14 @@ async def get_and_sync_teams(db: Session, league_id: int):
 
             for item in data:
                 team_info = item["team"]
+                venue = item["venue"]
 
                 new_team = Team(
                     id=team_info["id"],
                     league_id=league_id,
                     name=team_info["name"],
-                    city=team_info["city"],
-                    stadium=item["venue"]["name"]
+                    city=venue["city"],
+                    stadium=venue["name"]
                 )
 
                 db.add(new_team)
@@ -46,7 +48,7 @@ async def get_and_sync_teams(db: Session, league_id: int):
             raise HTTPException(status_code=exc.response.status_code, detail="Error fetching live matches from API-Football")
         
 
-logger = logging.getLogger(__name__)
+
 
 async def sync_teams(db: Session, league_id: int):
     logger.info("Syncing teams...")
@@ -62,20 +64,21 @@ async def sync_teams(db: Session, league_id: int):
 
             for item in data:
                 team_info = item["team"]
+                venue = item["venue"]
 
-                existing_team = db.query(Team).filter(Team.id == team_info["id"])
+                existing_team = db.query(Team).filter(Team.id == team_info["id"]).first()
 
                 if existing_team:
                     existing_team.name = team_info["name"]
-                    existing_team.city = team_info["city"]
-                    existing_team.stadium = item["venue"]["name"]
+                    existing_team.city = venue["city"]
+                    existing_team.stadium = venue["name"]
                 else:
                     new_team = Team(
                         id=team_info["id"],
                         league_id=league_id,
                         name=team_info["name"],
-                        city=team_info["city"],
-                        stadium=item["venue"]["name"]
+                        city=venue["city"],
+                        stadium=venue["name"]
                     )
                     db.add(new_team)
 
