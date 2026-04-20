@@ -1,5 +1,5 @@
 from app.database import SessionLocal
-from app.services.football_api import sync_teams
+from app.services.teams_service import sync_teams
 import logging
 
 logger = logging.getLogger(__name__)

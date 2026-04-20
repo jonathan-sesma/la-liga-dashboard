@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.team import Team
 from app.schemas.team import TeamCreate, TeamResponse
-from app.services.football_api import get_and_sync_teams
+from app.services.teams_service import get_and_sync_teams
 from app.services.scheduler import sync_la_liga_data
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
