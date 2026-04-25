@@ -8,8 +8,6 @@ from app.services.scheduler import sync_la_liga_data
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
-# We tell FastAPI to expect 'TeamCreate' in the body
-# and return 'TeamResponse' as the result
 @router.post("/", response_model=TeamResponse)
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
     # team_data.model_dump() converts the Pydantic object to a dictionary
@@ -22,12 +20,8 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
 @router.get("/")
 async def fetch_teams(db: Session = Depends(get_db)):
     return await get_and_sync_teams(db=db, league_id=140) 
-        # 140 is the league_id for La Liga in API-Football
 
 @router.post("/sync_now")
 def manual_sync(background_tasks: BackgroundTasks):
-    """
-    Trigger the background sync manually without waiting for the scheduled job.
-    """
     background_tasks.add_task(sync_la_liga_data)
     return {"message": "Team sync has been scheduled in the background."}

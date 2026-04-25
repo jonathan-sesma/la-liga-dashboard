@@ -14,5 +14,10 @@ async def get_and_sync_standings(db: Session, league_id: int):
             response = await client.get(url, headers=headers)
             response.raise_for_status()
 
+            data = response.json()["response"]
+
+            for item in data:
+                
+
         except httpx.HTTPStatusError as exc:
             raise HTTPException(status_code=exc.response.status_code,detail="Error fetching standings from API-FOOTBALL")

@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
     Base.metadata.create_all(bind=engine)
     scheduler = AsyncIOScheduler()
     scheduler.add_job(sync_la_liga_data, 'interval', hours=6)
@@ -21,7 +20,6 @@ async def lifespan(app: FastAPI):
     logger.info("Scheduler started for syncing La Liga teams every 6 hours.")
 
     yield
-    # Shutdown logic (optional)
     scheduler.shutdown()
     logger.info("Scheduler shut down gracefully.")
 
