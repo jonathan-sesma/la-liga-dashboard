@@ -20,10 +20,7 @@ async def get_and_sync_teams(db: Session, league_id: int):
 
     async with httpx.AsyncClient() as client:
         try:
-            # We call the external endpoint to get live matches
             response = await client.get(url, headers=headers)
-
-            # This checks if api-football returned an error status code (like 400 or 500)
             response.raise_for_status()
 
             data = response.json()["response"]

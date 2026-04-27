@@ -17,6 +17,7 @@ async def get_and_sync_standings(db: Session, league_id: int):
             data = response.json()["response"]
 
             for item in data:
+                print(item)
                 
 
         except httpx.HTTPStatusError as exc:
