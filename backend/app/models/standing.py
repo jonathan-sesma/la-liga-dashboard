@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, ForeignKey
 from app.database import Base
 
-class Standings(Base):
-    __tablename__ = "Standings"
+class Standing(Base):
+    __tablename__ = "standing"
 
     id = Column(Integer, primary_key=True, index=True)
     team_id = Column(Integer, ForeignKey("teams.id"))
