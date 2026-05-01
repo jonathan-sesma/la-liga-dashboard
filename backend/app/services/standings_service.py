@@ -20,7 +20,7 @@ async def get_and_sync_standings(db: Session, league_id: int):
             for item in data:
                 team_id = item["team"]["id"]
 
-                existing = db.querty(Standing).filter(
+                existing = db.query(Standing).filter(
                     Standing.team_id == team_id,
                     Standing.league_id == league_id
                 ).first()
@@ -28,6 +28,14 @@ async def get_and_sync_standings(db: Session, league_id: int):
                 if existing:
                     existing.position = item["rank"]
                     existing.points = item["points"]
+                    existing.played = item["all"]["played"]
+                    existing.wins = item["all"]["win"]
+                    existing.losses = item["all"]["lose"]
+                    existing.draws = item["all"]["draw"]
+                    existing.goals_for = item["all"]["goals"]["for"]
+                    existing.goals_against = item["all"]["goals"]["against"]
+                    existing.goal_difference = item["goalsDiff"]
+                    
                 else:
                     new_standing  = Standing(
                     team_id=team_id,
