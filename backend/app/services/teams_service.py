@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models import Team
 
 logger = logging.getLogger(__name__)
+
 async def get_and_sync_teams(db: Session, league_id: int):
     existing_teams = db.query(Team).filter(Team.league_id == league_id).all()
 
