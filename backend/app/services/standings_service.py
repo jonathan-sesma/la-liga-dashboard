@@ -78,7 +78,7 @@ async def sync_standings(db: Session, league_id: int):
             response.raise_for_status()
             data = response.json()["response"][0]["league"]["standings"][0]
 
-            logger.debug(f"Api Response {json.dumps(data, indent=2)}")
+            logger.info(f"Api Response {json.dumps(data, indent=2)}")
 
             for item in data:
                 existing = db.query(Standing).filter(
