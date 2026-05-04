@@ -8,6 +8,12 @@ from app.models.standing import Standing
 
 logger = logging.getLogger(__name__)
 async def get_and_sync_standings(db: Session, league_id: int):
+    existing_stands = db.query(Standing).filter(
+        Standing.league_id == league_id).all()
+    
+    if existing:
+        return existing_stands
+
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
     url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season=2024"
 

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from app.schemas.team import TeamBasic
 
 class StandingBase(BaseModel):
     team_id: int
@@ -14,4 +15,6 @@ class StandingBase(BaseModel):
     goal_difference: int
 
 class StandingResponse(StandingBase):
+    team: TeamBasic
+    
     model_config = ConfigDict(from_attributes=True)

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Standing(Base):
@@ -16,3 +17,5 @@ class Standing(Base):
     goals_for = Column(Integer)
     goals_against = Column(Integer)
     goal_difference = Column(Integer)
+
+    team = relationship("Team", back_populates="standings")
