@@ -60,6 +60,11 @@ async def fetch_standings_from_api(url, headers, db):
 
 
 def upsert_standings(db: Session, data, league_id):
+
+    existing_standings = db.query(Standing).filter(
+        Standing.league_id == league_id
+    ).all()
+    
     for item in data:
         existing = db.query(Standing).filter(
             Standing.team_id == item["team"]["id"],
