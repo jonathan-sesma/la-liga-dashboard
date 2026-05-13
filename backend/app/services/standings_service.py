@@ -1,6 +1,5 @@
 import httpx
 import logging
-import json
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
@@ -20,7 +19,7 @@ async def get_and_sync_standings(db: Session, league_id: int):
 
     data = await fetch_standings_from_api(url, headers, db)
 
-    await upsert_standings(db, data, league_id)
+    upsert_standings(db, data, league_id)
 
     return get_standings(db, league_id)
 
@@ -37,7 +36,7 @@ async def sync_standings(db: Session, league_id: int):
         
 async def fetch_standings_from_api(url, headers, db):
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
@@ -52,7 +51,6 @@ async def fetch_standings_from_api(url, headers, db):
             )
 
         except Exception as exc:
-            db.rollback()
             raise HTTPException(
                 status_code=500,
                 detail=f"Unexpected error: {str(exc)}"
@@ -65,41 +63,47 @@ def upsert_standings(db: Session, data, league_id):
         Standing.league_id == league_id
     ).all()
     
-    for item in data:
-        existing = db.query(Standing).filter(
-            Standing.team_id == item["team"]["id"],
-            Standing.league_id == league_id
-        ).first()
+    existing_map = {
+        standing.team_id: standing
+        for standing in existing_standings
+    }
 
-        if existing:
-            existing.position = item["rank"]
-            existing.points = item["points"]
-            existing.played = item["all"]["played"]
-            existing.wins = item["all"]["win"]
-            existing.losses = item["all"]["lose"]
-            existing.draws = item["all"]["draw"]
-            existing.goals_for = item["all"]["goals"]["for"]
-            existing.goals_against = item["all"]["goals"]["against"]
-            existing.goal_difference = item["goalsDiff"]
+    try:
 
-        else:
-            new_standing = Standing(
-            team_id=item["team"]["id"],
-            league_id=league_id,
-            position=item["rank"],
-            points=item["points"],
-            played=item["all"]["played"],
-            wins=item["all"]["win"],
-            losses=item["all"]["lose"],
-            draws=item["all"]["draw"],
-            goals_for=item["all"]["goals"]["for"],
-            goals_against=item["all"]["goals"]["against"],
-            goal_difference=item["goalsDiff"]
-            )
+        for item in data:
+            existing = existing_map.get(item["team"]["id"])
 
-            db.add(new_standing)
+            if existing:
+                existing.position = item["rank"]
+                existing.points = item["points"]
+                existing.played = item["all"]["played"]
+                existing.wins = item["all"]["win"]
+                existing.losses = item["all"]["lose"]
+                existing.draws = item["all"]["draw"]
+                existing.goals_for = item["all"]["goals"]["for"]
+                existing.goals_against = item["all"]["goals"]["against"]
+                existing.goal_difference = item["goalsDiff"]
 
-    db.commit()
+            else:
+                new_standing = Standing(
+                team_id=item["team"]["id"],
+                league_id=league_id,
+                position=item["rank"],
+                points=item["points"],
+                played=item["all"]["played"],
+                wins=item["all"]["win"],
+                losses=item["all"]["lose"],
+                draws=item["all"]["draw"],
+                goals_for=item["all"]["goals"]["for"],
+                goals_against=item["all"]["goals"]["against"],
+                goal_difference=item["goalsDiff"]
+                )
+
+                db.add(new_standing)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def get_standings(db: Session, league_id):
