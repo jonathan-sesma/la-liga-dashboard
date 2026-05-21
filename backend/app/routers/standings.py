@@ -9,7 +9,7 @@ router = APIRouter(prefix="/standings", tags=["Standings"])
 
 @router.get("/", response_model=list[StandingResponse])
 async def fetch_standings(db: Session = Depends(get_db)):
-    return await get_and_sync_standings(db=db, league_id=140)
+    return await get_and_sync_standings(db=db, league_id=140, seasson=2024)
 
 @router.post("/sync_now")
 def manual_sync(background_tasks: BackgroundTasks):

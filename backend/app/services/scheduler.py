@@ -26,7 +26,7 @@ def sync_la_liga_standings():
     db = SessionLocal()
 
     try:
-        asyncio.run(sync_standings(db=db, league_id=140))
+        asyncio.run(sync_standings(db=db, league_id=140, season=2024))
         logger.info("Scheduled sync completed successfully.")
 
     except Exception as e:

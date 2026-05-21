@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
+from typing import List
 
 logger = logging.getLogger(__name__)
 
-async def get_and_sync_standings(db: Session, league_id: int):
+async def get_and_sync_standings(db: Session, league_id: int, season: int):
 
     existing = get_standings(db, league_id)
 
@@ -15,26 +16,26 @@ async def get_and_sync_standings(db: Session, league_id: int):
          return existing
 
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season=2024"
+    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
 
-    data = await fetch_standings_from_api(url, headers, db)
+    data = await fetch_standings_from_api(url, headers)
 
     upsert_standings(db, data, league_id)
 
     return get_standings(db, league_id)
 
-async def sync_standings(db: Session, league_id: int):
+async def sync_standings(db: Session, league_id: int, season: int):
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season=2024"
+    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
 
-    data = await fetch_standings_from_api(url, headers, db)
+    data = await fetch_standings_from_api(url, headers)
 
     upsert_standings(db, data, league_id)
 
     return get_standings(db, league_id)
 
         
-async def fetch_standings_from_api(url, headers, db):
+async def fetch_standings_from_api(url, headers) -> list:
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -44,7 +45,7 @@ async def fetch_standings_from_api(url, headers, db):
             return data
         
         except httpx.HTTPStatusError as exc:
-            db.rollback()
+            logger.exception("API-FOOTBALL returned an error")
             raise HTTPException(
                 status_code=exc.response.status_code,
                 detail="Error fetching standings from API-FOOTBALL"
@@ -106,9 +107,7 @@ def upsert_standings(db: Session, data, league_id):
         raise
 
 
-def get_standings(db: Session, league_id):
-    existing_stands = db.query(Standing).filter(
-        Standing.league_id == league_id).all()
-    
-    if existing_stands:
-        return existing_stands
+def get_standings(db: Session, league_id) -> list[Standing]:
+    return db.query(Standing).filter(
+        Standing.league_id == league_id
+    ).all()
