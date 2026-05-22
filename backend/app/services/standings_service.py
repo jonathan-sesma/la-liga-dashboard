@@ -72,18 +72,18 @@ def upsert_standings(db: Session, data, league_id):
     try:
 
         for item in data:
-            existing = existing_map.get(item["team"]["id"])
+            existing_standing = existing_map.get(item["team"]["id"])
 
-            if existing:
-                existing.position = item["rank"]
-                existing.points = item["points"]
-                existing.played = item["all"]["played"]
-                existing.wins = item["all"]["win"]
-                existing.losses = item["all"]["lose"]
-                existing.draws = item["all"]["draw"]
-                existing.goals_for = item["all"]["goals"]["for"]
-                existing.goals_against = item["all"]["goals"]["against"]
-                existing.goal_difference = item["goalsDiff"]
+            if existing_standing:
+                existing_standing.position = item["rank"]
+                existing_standing.points = item["points"]
+                existing_standing.played = item["all"]["played"]
+                existing_standing.wins = item["all"]["win"]
+                existing_standing.losses = item["all"]["lose"]
+                existing_standing.draws = item["all"]["draw"]
+                existing_standing.goals_for = item["all"]["goals"]["for"]
+                existing_standing.goals_against = item["all"]["goals"]["against"]
+                existing_standing.goal_difference = item["goalsDiff"]
 
             else:
                 new_standing = Standing(
