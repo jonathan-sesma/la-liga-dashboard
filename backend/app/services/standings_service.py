@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
-from typing import List
+from typing import list
 
 logger = logging.getLogger(__name__)
 
