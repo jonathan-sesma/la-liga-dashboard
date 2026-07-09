@@ -1,4 +1,3 @@
-import json
 import httpx
 import logging
 from fastapi import HTTPException
@@ -9,7 +8,7 @@ from app.models import Team
 logger = logging.getLogger(__name__)
 
 async def get_and_sync_teams(db: Session, league_id: int):
-    existing = get_teams()
+    existing = get_teams(db, league_id)
 
     if existing:
         logger.info("Returning teams from Local Database")
@@ -23,35 +22,6 @@ async def get_and_sync_teams(db: Session, league_id: int):
     upsert_teams(db, data, league_id)
 
     return get_teams(db, league_id)
-
-    # async with httpx.AsyncClient() as client:
-    #     try:
-    #         response = await client.get(url, headers=headers)
-    #         response.raise_for_status()
-
-    #         data = response.json()["response"]
-
-    #         for item in data:
-    #             team_info = item["team"]
-    #             venue = item["venue"]
-
-    #             new_team = Team(
-    #                 id=team_info["id"],
-    #                 league_id=league_id,
-    #                 name=team_info["name"],
-    #                 city=venue["city"],
-    #                 stadium=venue["name"]
-    #             )
-
-    #             db.add(new_team)
-                
-    #         db.commit()
-    #         return db.query(Team).filter(Team.league_id == league_id).all()
-    
-    #     except httpx.HTTPStatusError as exc:
-    #         raise HTTPException(status_code=exc.response.status_code, detail="Error fetching live matches from API-Football")
-        
-
 
 
 async def sync_teams(db: Session, league_id: int):
@@ -90,7 +60,7 @@ def upsert_teams(db: Session, data, league_id: int):
     ).all()
 
     existing_map = {
-        team.team_id: team
+        team.id: team
         for team in existing_teams
     }
 
@@ -104,7 +74,7 @@ def upsert_teams(db: Session, data, league_id: int):
                 existing_team.stadium = item["venue"]["name"]
             else:
                 new_team = Team(
-                    id = item["team"]["name"],
+                    id = item["team"]["id"],
                     league_id = league_id,
                     name = item["team"]["name"],
                     city = item["venue"]["city"],
