@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models.team import Team
 from app.schemas.team import TeamCreate, TeamResponse
 from app.services.teams_service import get_and_sync_teams
-from app.services.scheduler import sync_la_liga_data
+from app.services.scheduler import sync_la_liga_teams
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
@@ -23,5 +23,5 @@ async def fetch_teams(db: Session = Depends(get_db)):
 
 @router.post("/sync_now")
 def manual_sync(background_tasks: BackgroundTasks):
-    background_tasks.add_task(sync_la_liga_data)
+    background_tasks.add_task(sync_la_liga_teams)
     return {"message": "Team sync has been scheduled in the background."}

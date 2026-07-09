@@ -6,7 +6,7 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
-def sync_la_liga_data():
+def sync_la_liga_teams():
     logger.info("Scheduled Sync Started: Updating La Liga Teams...")
 
     db = SessionLocal()
