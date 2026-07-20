@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -6,9 +6,10 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(String, index=True)
     city = Column(String)
     stadium = Column(String)
-    league_id = Column(Integer, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), index=True)
 
+    league = relationship("League", back_populates="teams")
     standings = relationship("Standing", back_populates="team")
