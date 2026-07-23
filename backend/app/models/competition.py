@@ -2,20 +2,20 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.database import Base
 
-class Team(Base):
-    __tablename__ = "teams"
+class Competition(Base):
+    __tablename__ = "competitions"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    city = Column(String)
-    stadium = Column(String)
+    country = Column(String)
+    type = Column(String)
 
-    competition_seasons = relationship(
+    team_seasons = relationship(
         "TeamCompetitionSeason",
-        back_populates="team"
+        back_populates="competition"
     )
 
     standings = relationship(
         "Standing",
-        back_populates="team"
+        back_populates="competition"
     )
