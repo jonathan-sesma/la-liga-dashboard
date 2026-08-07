@@ -7,32 +7,32 @@ from app.models import Team
 
 logger = logging.getLogger(__name__)
 
-async def get_and_sync_teams(db: Session, league_id: int):
-    existing = get_teams(db, league_id)
+async def get_and_sync_teams(db: Session, competition_id: int, season: int):
+    existing = get_teams(db, competition_id)
 
     if existing:
         logger.info("Returning teams from Local Database")
         return existing
 
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2024"
+    url = f"{settings.FOOTBALL_API_URL}/teams?league={competition_id}&season={season}"
 
     data = await fetch_teams_from_api(url, headers)
 
-    upsert_teams(db, data, league_id)
+    upsert_teams(db, data)
 
-    return get_teams(db, league_id)
+    return get_teams(db, competition_id)
 
 
-async def sync_teams(db: Session, league_id: int):
+async def sync_teams(db: Session, competition_id: int):
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/teams?league={league_id}&season=2024"
+    url = f"{settings.FOOTBALL_API_URL}/teams?league={competition_id}&season=2024"
 
     data = await fetch_teams_from_api(url, headers)
 
-    upsert_teams(db, data, league_id)
+    upsert_teams(db, data, competition_id)
 
-    return get_teams(db, league_id)
+    return get_teams(db, competition_id)
 
 
 async def fetch_teams_from_api(url, headers) -> list:
@@ -54,9 +54,9 @@ async def fetch_teams_from_api(url, headers) -> list:
                 detail=f"Unexpected error: {str(exc)}"
             )
 
-def upsert_teams(db: Session, data, league_id: int):
+def upsert_teams(db: Session, data, competition_id):
     existing_teams = db.query(Team).filter(
-        Team.league_id == league_id
+        Team.competition_id == competition_id
     ).all()
 
     existing_map = {
@@ -75,7 +75,6 @@ def upsert_teams(db: Session, data, league_id: int):
             else:
                 new_team = Team(
                     id = item["team"]["id"],
-                    league_id = league_id,
                     name = item["team"]["name"],
                     city = item["venue"]["city"],
                     stadium = item["venue"]["name"]
@@ -87,7 +86,7 @@ def upsert_teams(db: Session, data, league_id: int):
         db.rollback()
         raise
 
-def get_teams(db: Session, league_id) -> list[Team]:
+def get_teams(db: Session, competition_id) -> list[Team]:
     return db.query(Team).filter(
-        Team.league_id == league_id
+        Team.league_id == competition_id
     ).all()
