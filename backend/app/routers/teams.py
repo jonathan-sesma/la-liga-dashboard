@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.team import Team
@@ -23,6 +23,12 @@ async def get_teams(
     season: int | None = None,
     db: Session = Depends(get_db),
 ):
+    if season is not None and competition_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="season requires competition_id"
+        )
+    
     return await get_and_sync_teams(
         db = db,
         competition_id=competition_id,
