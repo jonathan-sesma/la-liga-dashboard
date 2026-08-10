@@ -18,8 +18,16 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 #     return new_team
 
 @router.get("/")
-async def fetch_teams(db: Session = Depends(get_db)):
-    return await get_and_sync_teams(db=db, competition_id=140) 
+async def get_teams(
+    competition_id: int | None = None,
+    season: int | None = None,
+    db: Session = Depends(get_db),
+):
+    return await get_and_sync_teams(
+        db = db,
+        competition_id=competition_id,
+        season=season,
+    )
 
 @router.post("/sync_now")
 def manual_sync(background_tasks: BackgroundTasks):

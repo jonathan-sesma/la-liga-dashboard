@@ -7,35 +7,50 @@ from app.models import Team
 
 logger = logging.getLogger(__name__)
 
-async def get_and_sync_teams(db: Session, competition_id: int, season: int):
-    existing = get_teams(db, competition_id)
+async def get_and_sync_teams(
+        db: Session,
+        competition_id: int | None = None,
+        season: int | None = None,
+):
+    teams = get_teams(
+        db=db,
+        competition_id=competition_id,
+        season=season,
+    )
 
-    if existing:
-        logger.info("Returning teams from Local Database")
-        return existing
+    if teams:
+        # logger.info("Returning teams from Local Database")
+        return teams
+
+
+    teams = await fetch_teams_from_api(
+        competition_id=competition_id,
+        season=season,
+    )
+
+    save_teams(
+        db=db,
+        teams=teams,
+        competition_id=competition_id,
+        season=season
+    )
+
+    return teams
+
+
+async def sync_teams(db: Session, competition_id: int):
+    teams = await fetch_teams_from_api()
+
+    save_teams(db, teams, competition_id)
+
+    return get_teams(db, competition_id)
+
+
+async def fetch_teams_from_api(competition_id, season) -> list:
 
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
     url = f"{settings.FOOTBALL_API_URL}/teams?league={competition_id}&season={season}"
 
-    data = await fetch_teams_from_api(url, headers)
-
-    upsert_teams(db, data)
-
-    return get_teams(db, competition_id)
-
-
-async def sync_teams(db: Session, competition_id: int):
-    headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/teams?league={competition_id}&season=2024"
-
-    data = await fetch_teams_from_api(url, headers)
-
-    upsert_teams(db, data, competition_id)
-
-    return get_teams(db, competition_id)
-
-
-async def fetch_teams_from_api(url, headers) -> list:
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(url, headers=headers)
@@ -54,7 +69,7 @@ async def fetch_teams_from_api(url, headers) -> list:
                 detail=f"Unexpected error: {str(exc)}"
             )
 
-def upsert_teams(db: Session, data, competition_id):
+def save_teams(db: Session, data, competition_id):
     existing_teams = db.query(Team).filter(
         Team.competition_id == competition_id
     ).all()
@@ -86,7 +101,5 @@ def upsert_teams(db: Session, data, competition_id):
         db.rollback()
         raise
 
-def get_teams(db: Session, competition_id) -> list[Team]:
-    return db.query(Team).filter(
-        Team.league_id == competition_id
-    ).all()
+def get_teams(db: Session) -> list[Team]:
+    return db.query(Team).all()
