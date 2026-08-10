@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.database import engine, Base
 from contextlib import asynccontextmanager
 from app.routers import teams, standings
-from app.services.scheduler import sync_la_liga_teams, sync_la_liga_standings
+from app.services.scheduler import sync_teams_now, sync_la_liga_standings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
 
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         return
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(sync_la_liga_teams, 'interval', hours=6)
+    scheduler.add_job(sync_teams_now, 'interval', hours=6)
     scheduler.add_job(sync_la_liga_standings, 'interval', hours=6)
     scheduler.start()
     logger.info("Scheduler started for syncing La Liga teams and standings every 6 hours.")

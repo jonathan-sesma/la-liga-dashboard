@@ -38,8 +38,12 @@ async def get_and_sync_teams(
     return teams
 
 
-async def sync_teams(db: Session, competition_id: int):
-    teams = await fetch_teams_from_api()
+async def sync_teams(
+        db: Session,
+        competition_id: int | None = None,
+        season: int | None = None,
+):
+    teams = await fetch_teams_from_api(competition_id, season)
 
     save_teams(db, teams, competition_id)
 
@@ -101,5 +105,8 @@ def save_teams(db: Session, data, competition_id):
         db.rollback()
         raise
 
-def get_teams(db: Session) -> list[Team]:
-    return db.query(Team).all()
+def get_teams(
+        competition_id: int,
+        season: int,
+):
+    
