@@ -7,15 +7,21 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-def sync_teams_now(
-        db: Session,
-        competition_id: int | None = None,
-        season: int | None = None,
+async def sync_teams_now(
+        competition_id: int,
+        season: int,
 ):
     logger.info("Scheduled Sync Started: Updating La Liga Teams...")
 
+    db = SessionLocal()
+
     try:
-        asyncio.run(sync_teams(db, competition_id, season))
+        await sync_teams(
+            db=db,
+            competition_id=competition_id,
+            season=season
+        )
+        
         logger.info("Scheduled sync completed successfully.")
 
     except Exception as e:

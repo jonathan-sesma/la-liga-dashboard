@@ -7,7 +7,7 @@ from app.models import Team
 
 logger = logging.getLogger(__name__)
 
-async def get_and_sync_teams(
+async def get_teams(
         db: Session,
         competition_id: int | None = None,
         season: int | None = None,

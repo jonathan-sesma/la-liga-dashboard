@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.teams_service import get_and_sync_teams
+from app.services.teams_service import get_teams
 from app.services.scheduler import sync_teams_now
 # from app.models.team import Team
 # from app.schemas.team import TeamCreate, TeamResponse
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 #     return new_team
 
 @router.get("/")
-async def get_teams(
+async def fetch_teams(
     competition_id: int | None = None,
     season: int | None = None,
     db: Session = Depends(get_db),
@@ -29,7 +29,7 @@ async def get_teams(
             detail="season requires competition_id"
         )
     
-    return await get_and_sync_teams(
+    return await get_teams(
         db = db,
         competition_id=competition_id,
         season=season,
@@ -42,9 +42,10 @@ def manual_sync(
     season: int | None = None,
     db: Session = Depends(get_db),
 ):
-    background_tasks.add_task(sync_teams_now(
+    background_tasks.add_task(
+        sync_teams_now,
+        db=db,
         competition_id=competition_id,
-        season=season,
-        db=db
-    ))
+        season=season
+    )
     return {"message": "Team sync has been scheduled in the background."}
