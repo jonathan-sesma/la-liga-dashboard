@@ -40,11 +40,9 @@ def manual_sync(
     background_tasks: BackgroundTasks,
     competition_id: int | None = None,
     season: int | None = None,
-    db: Session = Depends(get_db),
 ):
     background_tasks.add_task(
         sync_teams_now,
-        db=db,
         competition_id=competition_id,
         season=season
     )

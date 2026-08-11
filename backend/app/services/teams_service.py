@@ -31,7 +31,6 @@ async def get_teams(
     save_teams(
         db=db,
         teams=teams,
-        competition_id=competition_id,
         season=season
     )
 
@@ -73,10 +72,8 @@ async def fetch_teams_from_api(competition_id, season) -> list:
                 detail=f"Unexpected error: {str(exc)}"
             )
 
-def save_teams(db: Session, data, competition_id):
-    existing_teams = db.query(Team).filter(
-        Team.competition_id == competition_id
-    ).all()
+def save_teams(db: Session, data):
+    existing_teams = db.query(Team).all()
 
     existing_map = {
         team.id: team
@@ -106,7 +103,20 @@ def save_teams(db: Session, data, competition_id):
         raise
 
 def get_teams(
-        competition_id: int,
-        season: int,
+        db: Session,
+        competition_id: int | None = None,
+        season: int | None = None,
 ):
-    
+    query = db.query(Team)
+
+    if competition_id is not None:
+        query = query.join(TeamCompetition).filter(
+            TeamCompetition.competition_id == competition_id
+        )
+
+    if season is not None:
+        query = query.filter(
+            TeamCompetition.season_id == season
+        )
+
+    return query.all()

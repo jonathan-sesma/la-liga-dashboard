@@ -3,7 +3,7 @@ from app.services.teams_service import sync_teams
 from app.services.standings_service import sync_standings
 import logging
 import asyncio
-from sqlalchemy.orm import Session
+# from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def sync_teams_now(
     finally:
         db.close()
 
-def sync_la_liga_standings():
+def sync_standings_now():
     logger.info("Scheduled Sync Started: Updating La Liga Standings...")
 
     db = SessionLocal()

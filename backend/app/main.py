@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.database import engine, Base
 from contextlib import asynccontextmanager
 from app.routers import teams, standings
-from app.services.scheduler import sync_teams_now, sync_la_liga_standings
+from app.services.scheduler import sync_teams_now, sync_standings_now
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
 
@@ -14,27 +14,21 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    try:
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler
-    except ImportError:
-        logger.warning("apscheduler not available; skipping scheduler setup.")
-        yield
-        return
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(sync_teams_now, 'interval', hours=6)
-    scheduler.add_job(sync_la_liga_standings, 'interval', hours=6)
+    scheduler.add_job(sync_standings_now, 'interval', hours=6)
     scheduler.start()
-    logger.info("Scheduler started for syncing La Liga teams and standings every 6 hours.")
+    logger.info("Scheduler started for teams and standings every 6 hours.")
 
     yield
     scheduler.shutdown()
     logger.info("Scheduler shut down gracefully.")
 
 app = FastAPI(
-    title="La Liga Statistics API",
-    description="Backend API for La Liga Statistics dashboard",
-    version="0.1.0",
+    title="Soccer Statistics API",
+    description="Backend API for Soccer Statistics dashboard",
+    version="0.1.2",
     lifespan=lifespan
 )
 
