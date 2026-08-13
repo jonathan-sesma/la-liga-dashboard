@@ -4,15 +4,16 @@ from fastapi import HTTPException
 from app.config import settings
 from sqlalchemy.orm import Session
 from app.models import Team
+from app.models.team_competition_season import TeamCompetitionSeason
 
 logger = logging.getLogger(__name__)
 
-async def get_teams(
+async def get_or_sync_teams(
         db: Session,
         competition_id: int | None = None,
         season: int | None = None,
 ):
-    teams = get_teams(
+    teams = get_teams_db(
         db=db,
         competition_id=competition_id,
         season=season,
@@ -46,7 +47,7 @@ async def sync_teams(
 
     save_teams(db, teams, competition_id)
 
-    return get_teams(db, competition_id)
+    return get_teams_db(db, competition_id)
 
 
 async def fetch_teams_from_api(competition_id, season) -> list:
@@ -72,37 +73,80 @@ async def fetch_teams_from_api(competition_id, season) -> list:
                 detail=f"Unexpected error: {str(exc)}"
             )
 
-def save_teams(db: Session, data):
-    existing_teams = db.query(Team).all()
+def save_teams(
+        db: Session,
+        data: list,
+        competition_id: int,
+        season: int,
+):
 
-    existing_map = {
+    team_ids = [
+        item["team"]["id"]
+        for item in data
+    ]
+
+    existing_teams = (
+        db.query(Team)
+        .filter(Team.id.in_(team_ids))
+        .all()
+    )
+
+    existing_team_map = {
         team.id: team
         for team in existing_teams
     }
 
     try:
         for item in data:
-            existing_team = existing_map.get(item["team"]["id"])
+            team_data = item["team"]
+            venue_data = item.get("venue") or {}
+
+            team_id = team_data["id"]
+
+            existing_team = existing_team_map.get(team_id)
 
             if existing_team:
-                existing_team.name = item["team"]["name"]
-                existing_team.city = item["venue"]["city"]
-                existing_team.stadium = item["venue"]["name"]
+                existing_team.name = team_data["name"]
+                existing_team.city = venue_data.get("city")
+                existing_team.stadium = venue_data.get("name")
+
             else:
                 new_team = Team(
-                    id = item["team"]["id"],
-                    name = item["team"]["name"],
-                    city = item["venue"]["city"],
-                    stadium = item["venue"]["name"]
+                    id=team_id,
+                    name=team_data["name"],
+                    city=venue_data.get("city"),
+                    stadium=venue_data.get("name"),
                 )
 
                 db.add(new_team)
+
+            # Create the Team ↔ Competition ↔ Season relationship
+            existing_relationship = (
+                db.query(TeamCompetitionSeason)
+                .filter(
+                    TeamCompetitionSeason.team_id == team_id,
+                    TeamCompetitionSeason.competition_id == competition_id,
+                    TeamCompetitionSeason.season_id == season,
+                )
+                .first()
+            )
+
+            if not existing_relationship:
+                relationship = TeamCompetitionSeason(
+                    team_id=team_id,
+                    competition_id=competition_id,
+                    season_id=season,
+                )
+
+                db.add(relationship)
+
         db.commit()
+
     except Exception:
         db.rollback()
         raise
-
-def get_teams(
+    
+def get_teams_db(
         db: Session,
         competition_id: int | None = None,
         season: int | None = None,
@@ -110,13 +154,13 @@ def get_teams(
     query = db.query(Team)
 
     if competition_id is not None:
-        query = query.join(TeamCompetition).filter(
-            TeamCompetition.competition_id == competition_id
+        query = query.join(TeamCompetitionSeason).filter(
+            TeamCompetitionSeason.competition_id == competition_id
         )
 
     if season is not None:
         query = query.filter(
-            TeamCompetition.season_id == season
+            TeamCompetitionSeason.season_id == season
         )
 
     return query.all()

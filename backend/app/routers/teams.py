@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.teams_service import get_teams
+from app.services.teams_service import get_or_sync_teams
 from app.services.scheduler import sync_teams_now
 # from app.models.team import Team
 # from app.schemas.team import TeamCreate, TeamResponse
@@ -29,7 +29,7 @@ async def fetch_teams(
             detail="season requires competition_id"
         )
     
-    return await get_teams(
+    return await get_or_sync_teams(
         db = db,
         competition_id=competition_id,
         season=season,
