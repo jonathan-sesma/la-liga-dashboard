@@ -31,7 +31,8 @@ async def get_or_sync_teams(
 
     save_teams(
         db=db,
-        teams=teams,
+        data=teams,
+        competition_id=competition_id,
         season=season
     )
 
