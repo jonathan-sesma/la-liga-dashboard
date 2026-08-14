@@ -44,11 +44,23 @@ async def sync_teams(
         competition_id: int | None = None,
         season: int | None = None,
 ):
-    teams = await fetch_teams_from_api(competition_id, season)
+    teams = await fetch_teams_from_api(
+        competition_id,
+        season,
+    )
 
-    save_teams(db, teams, competition_id)
+    save_teams(
+        db=db,
+        data=teams,
+        competition_id=competition_id,
+        season=season,
+    )
 
-    return get_teams_db(db, competition_id)
+    return get_teams_db(
+        db=db,
+        competition_id=competition_id,
+        season=season
+    )
 
 
 async def fetch_teams_from_api(competition_id, season) -> list:
