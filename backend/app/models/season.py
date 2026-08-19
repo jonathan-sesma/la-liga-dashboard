@@ -9,7 +9,7 @@ class Season(Base):
     year = Column(Integer, unique=True, index=True)
     label = Column(String)
 
-    team_competitions = relationship(
+    team_competition_seasons = relationship(
         "TeamCompetitionSeason",
         back_populates="season"
     )

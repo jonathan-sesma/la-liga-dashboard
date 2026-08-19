@@ -3,7 +3,7 @@ import logging
 from fastapi import HTTPException
 from app.config import settings
 from sqlalchemy.orm import Session
-from app.models import Team
+from app.models import Team, Season
 from app.models.team_competition_season import TeamCompetitionSeason
 
 logger = logging.getLogger(__name__)
@@ -92,6 +92,8 @@ def save_teams(
         competition_id: int,
         season: int,
 ):
+    season_obj = get_season_by_year(db, season)
+    season_id = season_obj.id
 
     team_ids = [
         item["team"]["id"]
@@ -139,7 +141,7 @@ def save_teams(
                 .filter(
                     TeamCompetitionSeason.team_id == team_id,
                     TeamCompetitionSeason.competition_id == competition_id,
-                    TeamCompetitionSeason.season_id == season,
+                    TeamCompetitionSeason.season_id == season_id,
                 )
                 .first()
             )
@@ -148,7 +150,7 @@ def save_teams(
                 relationship = TeamCompetitionSeason(
                     team_id=team_id,
                     competition_id=competition_id,
-                    season_id=season,
+                    season_id=season_id,
                 )
 
                 db.add(relationship)
@@ -167,13 +169,30 @@ def get_teams_db(
     query = db.query(Team)
 
     if competition_id is not None:
-        query = query.join(TeamCompetitionSeason).filter(
+        query = query.join(
+            TeamCompetitionSeason,
+            TeamCompetitionSeason.team_id == Team.id,
+        ).filter(
             TeamCompetitionSeason.competition_id == competition_id
         )
 
     if season is not None:
+        season_obj = get_season_by_year(db, season)
+
         query = query.filter(
-            TeamCompetitionSeason.season_id == season
+            TeamCompetitionSeason.season_id == season_obj.id
         )
 
     return query.all()
+
+def get_season_by_year(db: Session, year: int) -> Season:
+    season_obj = (
+        db.query(Season)
+        .filter(Season.year == year)
+        .first()
+    )
+
+    if season_obj is None:
+        raise ValueError(f"Season {year} not found")
+
+    return season_obj

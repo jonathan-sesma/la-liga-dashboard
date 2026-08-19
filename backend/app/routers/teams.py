@@ -18,7 +18,7 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 #     return new_team
 
 @router.get("/")
-async def fetch_teams(
+async def get_teams(
     competition_id: int | None = None,
     season: int | None = None,
     db: Session = Depends(get_db),
