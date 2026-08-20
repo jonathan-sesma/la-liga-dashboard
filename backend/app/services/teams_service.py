@@ -36,7 +36,11 @@ async def get_or_sync_teams(
         season=season
     )
 
-    return teams
+    return get_teams_db(
+            db=db,
+            competition_id=competition_id,
+            season=season
+        )
 
 
 async def sync_teams(
@@ -168,20 +172,23 @@ def get_teams_db(
 ):
     query = db.query(Team)
 
-    if competition_id is not None:
+    if competition_id is not None or season is not None:
         query = query.join(
             TeamCompetitionSeason,
             TeamCompetitionSeason.team_id == Team.id,
-        ).filter(
-            TeamCompetitionSeason.competition_id == competition_id
         )
 
-    if season is not None:
-        season_obj = get_season_by_year(db, season)
+        if competition_id is not None:
+            query = query.filter(
+                TeamCompetitionSeason.competition_id == competition_id
+            )
 
-        query = query.filter(
-            TeamCompetitionSeason.season_id == season_obj.id
-        )
+        if season is not None:
+            season_obj = get_season_by_year(db, season)
+
+            query = query.filter(
+                TeamCompetitionSeason.season_id == season_obj.id
+            )
 
     return query.all()
 
