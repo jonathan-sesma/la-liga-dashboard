@@ -45,8 +45,8 @@ async def get_or_sync_teams(
 
 async def sync_teams(
         db: Session,
-        competition_id: int | None = None,
-        season: int | None = None,
+        competition_id: int,
+        season: int,
 ):
     teams = await fetch_teams_from_api(
         competition_id,

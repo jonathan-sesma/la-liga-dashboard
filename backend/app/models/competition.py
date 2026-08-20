@@ -10,7 +10,7 @@ class Competition(Base):
     country = Column(String)
     type = Column(String)
 
-    team_seasons = relationship(
+    team_competition_seasons = relationship(
         "TeamCompetitionSeason",
         back_populates="competition"
     )
