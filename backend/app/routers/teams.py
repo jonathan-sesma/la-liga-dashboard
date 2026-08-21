@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.teams_service import get_or_sync_teams
+from app.services.teams_service import get_or_sync_teams, get_all_teams
 from app.services.scheduler import sync_teams_now
 # from app.models.team import Team
 # from app.schemas.team import TeamCreate, TeamResponse
@@ -17,23 +17,27 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 #     db.refresh(new_team)
 #     return new_team
 
-@router.get("/")
-async def get_teams(
-    competition_id: int | None = None,
-    season: int | None = None,
-    db: Session = Depends(get_db),
-):
-    if season is not None and competition_id is None:
-        raise HTTPException(
-            status_code=400,
-            detail="season requires competition_id"
-        )
+# @router.get("/")
+# async def get_teams(
+#     competition_id: int | None = None,
+#     season: int | None = None,
+#     db: Session = Depends(get_db),
+# ):
+#     if season is not None and competition_id is None:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="season requires competition_id"
+#         )
     
-    return await get_or_sync_teams(
-        db = db,
-        competition_id=competition_id,
-        season=season,
-    )
+#     return await get_or_sync_teams(
+#         db = db,
+#         competition_id=competition_id,
+#         season=season,
+#     )
+
+@router.get("/")
+def get_teams(db: Session = Depends(get_db)):
+    return get_all_teams(db)
 
 @router.post("/sync_now")
 def manual_sync(

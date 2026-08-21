@@ -164,6 +164,9 @@ def save_teams(
     except Exception:
         db.rollback()
         raise
+
+def get_all_teams(db: Session):
+    return db.query(Team).all()
     
 def get_teams_db(
         db: Session,
