@@ -7,8 +7,8 @@ router = APIRouter(prefix="/competitions", tags=["Competitions"])
 
 @router.get("/{competition_id}/seasons/{season}/teams")
 async def get_competition_teams(
-        competition_id: int | None = None,
-        season: int | None = None,
+        competition_id: int,
+        season: int,
         db: Session = Depends(get_db)
 ):
     return await get_or_sync_teams(

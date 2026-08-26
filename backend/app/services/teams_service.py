@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 async def get_or_sync_teams(
         db: Session,
-        competition_id: int | None = None,
-        season: int | None = None,
+        competition_id: int,
+        season: int,
 ):
     teams = get_teams_db(
         db=db,
@@ -167,33 +167,35 @@ def save_teams(
 
 def get_all_teams(db: Session):
     return db.query(Team).all()
+
+def get_team_by_id(
+        db: Session,
+        team_id: int
+):
+    return (
+        db.query(Team)
+        .filter(Team.id == team_id)
+        .first()
+    )
     
 def get_teams_db(
         db: Session,
-        competition_id: int | None = None,
-        season: int | None = None,
+        competition_id: int,
+        season: int,
 ):
-    query = db.query(Team)
+    season_obj = get_season_by_year(db, season)
 
-    if competition_id is not None or season is not None:
-        query = query.join(
-            TeamCompetitionSeason,
-            TeamCompetitionSeason.team_id == Team.id,
+    return ( db.query(Team)
+            .join(
+                TeamCompetitionSeason,
+                TeamCompetitionSeason.team_id == Team.id,
         )
-
-        if competition_id is not None:
-            query = query.filter(
-                TeamCompetitionSeason.competition_id == competition_id
-            )
-
-        if season is not None:
-            season_obj = get_season_by_year(db, season)
-
-            query = query.filter(
-                TeamCompetitionSeason.season_id == season_obj.id
-            )
-
-    return query.all()
+        .filter(
+            TeamCompetitionSeason.competition_id == competition_id,
+            TeamCompetitionSeason.season_id == season_obj.id
+        )
+        .all()
+    )
 
 def get_season_by_year(db: Session, year: int) -> Season:
     season_obj = (

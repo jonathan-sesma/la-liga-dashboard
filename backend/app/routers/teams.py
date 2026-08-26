@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.teams_service import get_or_sync_teams, get_all_teams
+from app.services.teams_service import get_all_teams, get_team_by_id
 from app.services.scheduler import sync_teams_now
 # from app.models.team import Team
 # from app.schemas.team import TeamCreate, TeamResponse
@@ -34,16 +34,11 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 #         competition_id=competition_id,
 #         season=season,
 #     )
-
-@router.get("/")
-def get_teams(db: Session = Depends(get_db)):
-    return get_all_teams(db)
-
-@router.post("/sync_now")
+@router.post("/sync")
 def manual_sync(
     background_tasks: BackgroundTasks,
-    competition_id: int | None = None,
-    season: int | None = None,
+    competition_id: int,
+    season: int,
 ):
     background_tasks.add_task(
         sync_teams_now,
@@ -51,3 +46,20 @@ def manual_sync(
         season=season
     )
     return {"message": "Team sync has been scheduled in the background."}
+
+@router.get("/")
+def get_teams(db: Session = Depends(get_db)):
+    return get_all_teams(db)
+
+@router.get("/{team_id}")
+def get_team(team_id: int, db: Session = Depends(get_db)):
+    team = get_team_by_id(db, team_id)
+
+    if team is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Team {team_id} not found"
+        )
+
+    return team
+
