@@ -115,6 +115,25 @@ def save_teams(
         for team in existing_teams
     }
 
+    existing_relationships = (
+        db.query(TeamCompetitionSeason)
+        .filter(
+            TeamCompetitionSeason.team_id.in_(team_ids),
+            TeamCompetitionSeason.competition_id == competition_id,
+            TeamCompetitionSeason.season_id == season_id,
+        )
+        .all()
+    )
+
+    existing_relationship_map = {
+        (
+            relationship.team_id,
+            relationship.competition_id,
+            relationship.season_id,
+        ): relationship
+        for relationship in existing_relationships
+    }
+
     try:
         for item in data:
             team_data = item["team"]
@@ -122,6 +141,7 @@ def save_teams(
 
             team_id = team_data["id"]
 
+            #update or create Team
             existing_team = existing_team_map.get(team_id)
 
             if existing_team:
@@ -140,24 +160,20 @@ def save_teams(
                 db.add(new_team)
 
             # Create the Team ↔ Competition ↔ Season relationship
-            existing_relationship = (
-                db.query(TeamCompetitionSeason)
-                .filter(
-                    TeamCompetitionSeason.team_id == team_id,
-                    TeamCompetitionSeason.competition_id == competition_id,
-                    TeamCompetitionSeason.season_id == season_id,
-                )
-                .first()
+            relationship_key = (
+                team_id,
+                competition_id,
+                season_id
             )
 
-            if not existing_relationship:
-                relationship = TeamCompetitionSeason(
-                    team_id=team_id,
-                    competition_id=competition_id,
-                    season_id=season_id,
+            if relationship_key not in existing_relationship_map:
+                db.add(
+                    TeamCompetitionSeason(
+                        team_id=team_id,
+                        competition_id=competition_id,
+                        season_id=season_id
+                    )
                 )
-
-                db.add(relationship)
 
         db.commit()
 
