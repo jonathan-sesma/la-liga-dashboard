@@ -221,6 +221,9 @@ def get_season_by_year(db: Session, year: int) -> Season:
     )
 
     if season_obj is None:
-        raise ValueError(f"Season {year} not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Season {year} not found"
+        )
 
     return season_obj
