@@ -16,8 +16,20 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(sync_teams_now, 'interval', hours=6)
-    scheduler.add_job(sync_standings_now, 'interval', hours=6)
+    scheduler.add_job(
+        sync_teams_now,
+        'interval',
+        hours=6,
+        kwargs={
+            "competition_id": 140,
+            "season": 2024,
+        },
+    )
+    scheduler.add_job(
+        sync_standings_now,
+        'interval',
+        hours=6,
+    )
     scheduler.start()
     logger.info("Scheduler started for teams and standings every 6 hours.")
 
