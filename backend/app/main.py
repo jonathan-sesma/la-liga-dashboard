@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.database import engine, Base
 from contextlib import asynccontextmanager
-from app.routers import teams, standings
+from app.routers import teams, standings, competitions
 from app.services.scheduler import sync_teams_now, sync_standings_now
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
@@ -46,6 +46,7 @@ app = FastAPI(
 
 app.include_router(teams.router)
 app.include_router(standings.router)
+app.include_router(competitions.router)
 
 @app.get("/")
 def root():
