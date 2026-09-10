@@ -10,7 +10,7 @@ class Team(Base):
     city = Column(String)
     stadium = Column(String)
 
-    competition_seasons = relationship(
+    team_seasons = relationship(
         "TeamCompetitionSeason",
         back_populates="team"
     )

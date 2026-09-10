@@ -13,7 +13,7 @@ class TeamCompetitionSeason(Base):
 
     team = relationship(
         "Team",
-        back_populates="competition_seasons"
+        back_populates="team_seasons"
     )
 
     competition = relationship(
@@ -23,7 +23,7 @@ class TeamCompetitionSeason(Base):
 
     season = relationship(
         "Season",
-        back_populates="team_competitions"
+        back_populates="team_seasons"
     )
 
     __table_args__ = (
