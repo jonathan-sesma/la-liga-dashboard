@@ -5,6 +5,11 @@ from app.services.teams_service import get_or_sync_teams
 
 router = APIRouter(prefix="/competitions", tags=["Competitions"])
 
+@router.get("/test")
+async def test():
+    return {"message": "competition router works!"}
+
+
 @router.get("/{competition_id}/seasons/{season}/teams")
 async def get_competition_teams(
         competition_id: int,
