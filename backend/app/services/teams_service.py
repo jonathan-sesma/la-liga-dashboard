@@ -13,10 +13,12 @@ async def get_or_sync_teams(
         competition_id: int,
         season: int,
 ):
+    season_obj = get_or_create_season(db, season)
+
     teams = get_teams_db(
         db=db,
         competition_id=competition_id,
-        season=season,
+        season_id=season_obj.id,
     )
 
     if teams:
@@ -33,13 +35,13 @@ async def get_or_sync_teams(
         db=db,
         data=teams,
         competition_id=competition_id,
-        season=season
+        season_id=season_obj.id,
     )
 
     return get_teams_db(
             db=db,
             competition_id=competition_id,
-            season=season
+            season_id=season_obj.id
         )
 
 
@@ -48,6 +50,8 @@ async def sync_teams(
         competition_id: int,
         season: int,
 ):
+    season_obj = get_or_create_season(db, season)
+
     teams = await fetch_teams_from_api(
         competition_id,
         season,
@@ -57,13 +61,13 @@ async def sync_teams(
         db=db,
         data=teams,
         competition_id=competition_id,
-        season=season,
+        season_id=season_obj.id,
     )
 
     return get_teams_db(
         db=db,
         competition_id=competition_id,
-        season=season
+        season_id=season_obj
     )
 
 
@@ -94,10 +98,8 @@ def save_teams(
         db: Session,
         data: list,
         competition_id: int,
-        season: int,
+        season_id: int,
 ):
-    season_obj = get_season_by_year(db, season)
-    season_id = season_obj.id
 
     team_ids = [
         item["team"]["id"]
@@ -197,23 +199,21 @@ def get_team_by_id(
 def get_teams_db(
         db: Session,
         competition_id: int,
-        season: int,
+        season_id: int,
 ):
-    season_obj = get_season_by_year(db, season)
-
-    return ( db.query(Team)
+    return (db.query(Team)
             .join(
                 TeamCompetitionSeason,
                 TeamCompetitionSeason.team_id == Team.id,
         )
         .filter(
             TeamCompetitionSeason.competition_id == competition_id,
-            TeamCompetitionSeason.season_id == season_obj.id
+            TeamCompetitionSeason.season_id == season_id
         )
         .all()
     )
 
-def get_season_by_year(db: Session, year: int) -> Season:
+def get_or_create_season(db: Session, year: int) -> Season:
     season_obj = (
         db.query(Season)
         .filter(Season.year == year)
@@ -221,9 +221,11 @@ def get_season_by_year(db: Session, year: int) -> Season:
     )
 
     if season_obj is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Season {year} not found"
+        season_obj = Season(
+            year=year,
+            label=str(year)
         )
+        db.add(season_obj)
+        db.flush()
 
     return season_obj
