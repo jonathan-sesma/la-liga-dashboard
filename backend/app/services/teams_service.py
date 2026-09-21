@@ -80,8 +80,17 @@ async def fetch_teams_from_api(competition_id, season) -> list:
         try:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
-            data = response.json()["response"]
-            return data
+            response_data = response.json()
+
+            logger.info(
+                "API-Football: competition=%s season=%s results=%s errors=%s",
+                competition_id,
+                season,
+                response_data.get("results"),
+                response_data.get("errors"),
+            )
+
+            return response_data["response"]
         except httpx.HTTPStatusError as exc:
             logger.exception("API-Football returned an error")
             raise HTTPException(
