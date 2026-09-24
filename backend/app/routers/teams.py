@@ -8,32 +8,6 @@ from app.services.scheduler import sync_teams_now
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
-# @router.post("/", response_model=TeamResponse)
-# def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
-#     # team_data.model_dump() converts the Pydantic object to a dictionary
-#     new_team = Team(**team_data.model_dump())
-#     db.add(new_team)
-#     db.commit()
-#     db.refresh(new_team)
-#     return new_team
-
-# @router.get("/")
-# async def get_teams(
-#     competition_id: int | None = None,
-#     season: int | None = None,
-#     db: Session = Depends(get_db),
-# ):
-#     if season is not None and competition_id is None:
-#         raise HTTPException(
-#             status_code=400,
-#             detail="season requires competition_id"
-#         )
-    
-#     return await get_or_sync_teams(
-#         db = db,
-#         competition_id=competition_id,
-#         season=season,
-#     )
 @router.post("/sync")
 def manual_sync(
     background_tasks: BackgroundTasks,
@@ -63,3 +37,29 @@ def get_team(team_id: int, db: Session = Depends(get_db)):
 
     return team
 
+# @router.post("/", response_model=TeamResponse)
+# def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
+#     # team_data.model_dump() converts the Pydantic object to a dictionary
+#     new_team = Team(**team_data.model_dump())
+#     db.add(new_team)
+#     db.commit()
+#     db.refresh(new_team)
+#     return new_team
+
+# @router.get("/")
+# async def get_teams(
+#     competition_id: int | None = None,
+#     season: int | None = None,
+#     db: Session = Depends(get_db),
+# ):
+#     if season is not None and competition_id is None:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="season requires competition_id"
+#         )
+    
+#     return await get_or_sync_teams(
+#         db = db,
+#         competition_id=competition_id,
+#         season=season,
+#     )

@@ -7,34 +7,32 @@ from app.models.standing import Standing
 
 logger = logging.getLogger(__name__)
 
-async def get_and_sync_standings(db: Session, league_id: int, season: int):
+async def get_or_sync_standings(db: Session, league_id: int, season: int):
 
-    existing = get_standings(db, league_id)
+    existing = get_standings_db(db, league_id, season)
 
     if existing:
          return existing
 
-    headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
-
-    data = await fetch_standings_from_api(url, headers)
+    data = await fetch_standings_from_api(league_id, season)
 
     upsert_standings(db, data, league_id)
 
-    return get_standings(db, league_id)
+    return get_standings_db(db, league_id, season)
 
 async def sync_standings(db: Session, league_id: int, season: int):
-    headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
 
-    data = await fetch_standings_from_api(url, headers)
+    data = await fetch_standings_from_api(league_id, season)
 
     upsert_standings(db, data, league_id)
 
-    return get_standings(db, league_id)
+    return get_standings_db(db, league_id, season)
 
         
-async def fetch_standings_from_api(url, headers) -> list:
+async def fetch_standings_from_api(league_id, season) -> list:
+
+    headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
+    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -106,7 +104,7 @@ def upsert_standings(db: Session, data, league_id):
         raise
 
 
-def get_standings(db: Session, league_id) -> list[Standing]:
+def get_standings_db(db: Session, league_id, season) -> list[Standing]:
     return db.query(Standing).filter(
         Standing.league_id == league_id
     ).all()
