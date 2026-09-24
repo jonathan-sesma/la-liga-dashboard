@@ -30,13 +30,17 @@ async def sync_teams_now(
     finally:
         db.close()
 
-def sync_standings_now():
+async def sync_standings_now():
     logger.info("Scheduled Sync Started: Updating La Liga Standings...")
 
     db = SessionLocal()
 
     try:
-        asyncio.run(sync_standings(db=db, league_id=140, season=2024))
+        await sync_standings(
+            db=db,
+            league_id=league_id,
+            
+        )
         logger.info("Scheduled sync completed successfully.")
 
     except Exception as e:
