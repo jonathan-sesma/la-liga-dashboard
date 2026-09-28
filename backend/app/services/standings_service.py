@@ -7,32 +7,32 @@ from app.models.standing import Standing
 
 logger = logging.getLogger(__name__)
 
-async def get_or_sync_standings(db: Session, league_id: int, season: int):
+async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
-    existing = get_standings_db(db, league_id, season)
+    existing = get_standings_db(db, competition_id, season)
 
     if existing:
          return existing
 
-    data = await fetch_standings_from_api(league_id, season)
+    data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, league_id)
+    upsert_standings(db, data, competition_id)
 
-    return get_standings_db(db, league_id, season)
+    return get_standings_db(db, competition_id, season)
 
-async def sync_standings(db: Session, league_id: int, season: int):
+async def sync_standings(db: Session, competition_id: int, season: int):
 
-    data = await fetch_standings_from_api(league_id, season)
+    data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, league_id)
+    upsert_standings(db, data, competition_id)
 
-    return get_standings_db(db, league_id, season)
+    return get_standings_db(db, competition_id, season)
 
         
-async def fetch_standings_from_api(league_id, season) -> list:
+async def fetch_standings_from_api(competition_id, season) -> list:
 
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={league_id}&season={season}"
+    url = f"{settings.FOOTBALL_API_URL}/standings?league={competition_id}&season={season}"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -55,10 +55,10 @@ async def fetch_standings_from_api(league_id, season) -> list:
             )
 
 
-def upsert_standings(db: Session, data, league_id):
+def upsert_standings(db: Session, data, competition_id):
 
     existing_standings = db.query(Standing).filter(
-        Standing.league_id == league_id
+        Standing.competition_id == competition_id
     ).all()
     
     existing_map = {
@@ -85,7 +85,7 @@ def upsert_standings(db: Session, data, league_id):
             else:
                 new_standing = Standing(
                 team_id=item["team"]["id"],
-                league_id=league_id,
+                competition_id=competition_id,
                 position=item["rank"],
                 points=item["points"],
                 played=item["all"]["played"],
@@ -104,7 +104,7 @@ def upsert_standings(db: Session, data, league_id):
         raise
 
 
-def get_standings_db(db: Session, league_id, season) -> list[Standing]:
+def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
     return db.query(Standing).filter(
-        Standing.league_id == league_id
+        Standing.competition_id == competition_id
     ).all()

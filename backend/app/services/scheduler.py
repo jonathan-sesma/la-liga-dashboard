@@ -30,7 +30,10 @@ async def sync_teams_now(
     finally:
         db.close()
 
-async def sync_standings_now():
+async def sync_standings_now(
+        competition_id: int,
+        season: int,
+):
     logger.info("Scheduled Sync Started: Updating La Liga Standings...")
 
     db = SessionLocal()
@@ -38,7 +41,8 @@ async def sync_standings_now():
     try:
         await sync_standings(
             db=db,
-            league_id=league_id,
+            competition_id=competition_id,
+            season=season
             
         )
         logger.info("Scheduled sync completed successfully.")

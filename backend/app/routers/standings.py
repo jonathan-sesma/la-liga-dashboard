@@ -7,12 +7,28 @@ from app.services.scheduler import sync_standings_now
 
 router = APIRouter(prefix="/standings", tags=["Standings"])
 
-@router.get("/", response_model=list[StandingResponse])
-async def fetch_standings(db: Session = Depends(get_db)):
-    return await get_or_sync_standings(db=db, league_id=140, seasson=2024)
+@router.get("/{competition_id}/season/{season}", response_model=list[StandingResponse])
+async def fetch_standings(
+    competition_id: int,
+    season: int,
+    db: Session = Depends(get_db)
+):
+    return await get_or_sync_standings(
+        db=db,
+        competition_id=competition_id,
+        season=season
+    )
 
-@router.post("/sync_now")
-def manual_sync(background_tasks: BackgroundTasks):
-    background_tasks.add_task(sync_standings_now)
+@router.post("/sync")
+def manual_sync(
+    background_tasks: BackgroundTasks,
+    competition_id: int,
+    season: int,
+):
+    background_tasks.add_task(
+        sync_standings_now,
+        competition_id,
+        season
+    )
     return {"message": "Standings sync has been scheduled in the background"}
     
