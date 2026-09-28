@@ -11,7 +11,7 @@ async def sync_teams_now(
         competition_id: int,
         season: int,
 ):
-    logger.info("Scheduled Sync Started: Updating La Liga Teams...")
+    logger.info(f"Scheduled Sync Started: Updating competition: {competition_id} Teams...")
 
     db = SessionLocal()
 
@@ -34,7 +34,7 @@ async def sync_standings_now(
         competition_id: int,
         season: int,
 ):
-    logger.info("Scheduled Sync Started: Updating La Liga Standings...")
+    logger.info(f"Scheduled Sync Started: Updating Competition: {competition_id} standings...")
 
     db = SessionLocal()
 
