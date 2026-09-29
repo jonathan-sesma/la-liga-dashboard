@@ -16,7 +16,7 @@ async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id)
+    upsert_standings(db, data, competition_id, season)
 
     return get_standings_db(db, competition_id, season)
 
@@ -24,7 +24,7 @@ async def sync_standings(db: Session, competition_id: int, season: int):
 
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id)
+    upsert_standings(db, data, competition_id, season)
 
     return get_standings_db(db, competition_id, season)
 
@@ -55,10 +55,11 @@ async def fetch_standings_from_api(competition_id, season) -> list:
             )
 
 
-def upsert_standings(db: Session, data, competition_id):
+def upsert_standings(db: Session, data, competition_id, season):
 
     existing_standings = db.query(Standing).filter(
-        Standing.competition_id == competition_id
+        Standing.competition_id == competition_id,
+        Standing.season_year == season
     ).all()
     
     existing_map = {
@@ -86,6 +87,7 @@ def upsert_standings(db: Session, data, competition_id):
                 new_standing = Standing(
                 team_id=item["team"]["id"],
                 competition_id=competition_id,
+                season_year=season,
                 position=item["rank"],
                 points=item["points"],
                 played=item["all"]["played"],
@@ -106,5 +108,6 @@ def upsert_standings(db: Session, data, competition_id):
 
 def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
     return db.query(Standing).filter(
-        Standing.competition_id == competition_id
+        Standing.competition_id == competition_id,
+        Standing.season_year == season,
     ).all()
