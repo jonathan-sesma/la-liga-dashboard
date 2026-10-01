@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
+from app.services.teams_service import get_or_create_season
 
 logger = logging.getLogger(__name__)
 
