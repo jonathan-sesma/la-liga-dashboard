@@ -10,7 +10,6 @@ class Standing(Base):
     team_id = Column(Integer, ForeignKey("teams.id"), index=True)
     competition_id = Column(Integer, ForeignKey("competitions.id"), index=True)
     season_id = Column(Integer, ForeignKey("seasons.id"), index=True)
-    season_year = Column(Integer, ForeignKey("seasons.year"), index=True)
 
     position = Column(Integer)
     points = Column(Integer)
@@ -42,7 +41,6 @@ class Standing(Base):
             "team_id",
             "competition_id",
             "season_id",
-            "season_year",
             name="uq_team_competition_standing"
         ),
     )
