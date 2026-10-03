@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
+from app.models.season import Season
 from app.services.teams_service import get_or_create_season
 
 logger = logging.getLogger(__name__)
 
 async def get_or_sync_standings(db: Session, competition_id: int, season: int):
+
+    season_obj = get_or_create_season(season)
 
     existing = get_standings_db(db, competition_id, season)
 
@@ -17,17 +20,19 @@ async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id, season)
+    upsert_standings(db, data, competition_id, season_obj.id)
 
-    return get_standings_db(db, competition_id, season)
+    return get_standings_db(db, competition_id, season_obj.id)
 
 async def sync_standings(db: Session, competition_id: int, season: int):
 
+    season_obj = get_or_create_season(season)
+
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id, season)
+    upsert_standings(db, data, competition_id, season_obj.id)
 
-    return get_standings_db(db, competition_id, season)
+    return get_standings_db(db, competition_id, season_obj.id)
 
         
 async def fetch_standings_from_api(competition_id, season) -> list:
@@ -58,9 +63,13 @@ async def fetch_standings_from_api(competition_id, season) -> list:
 
 def upsert_standings(db: Session, data, competition_id, season):
 
-    existing_standings = db.query(Standing).filter(
+    existing_standings = db.query(Standing).join(
+        Season,
+        Season.year == season
+    ).filter(
         Standing.competition_id == competition_id,
-        Standing.season_year == season
+        ##Standing.season_id == season,
+        Season.year == season
     ).all()
     
     existing_map = {
@@ -88,7 +97,7 @@ def upsert_standings(db: Session, data, competition_id, season):
                 new_standing = Standing(
                 team_id=item["team"]["id"],
                 competition_id=competition_id,
-                season_year=season,
+                season_id=season,
                 position=item["rank"],
                 points=item["points"],
                 played=item["all"]["played"],
@@ -110,5 +119,5 @@ def upsert_standings(db: Session, data, competition_id, season):
 def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
     return db.query(Standing).filter(
         Standing.competition_id == competition_id,
-        Standing.season_year == season,
+        Standing.season_id == season,
     ).all()
