@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
-    season_obj = get_or_create_season(season)
-
     existing = get_standings_db(db, competition_id, season)
 
     if existing:
@@ -20,19 +18,17 @@ async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id, season_obj.id)
+    upsert_standings(db, data, competition_id, season)
 
-    return get_standings_db(db, competition_id, season_obj.id)
+    return get_standings_db(db, competition_id, season)
 
 async def sync_standings(db: Session, competition_id: int, season: int):
 
-    season_obj = get_or_create_season(season)
-
     data = await fetch_standings_from_api(competition_id, season)
 
-    upsert_standings(db, data, competition_id, season_obj.id)
+    upsert_standings(db, data, competition_id, season)
 
-    return get_standings_db(db, competition_id, season_obj.id)
+    return get_standings_db(db, competition_id, season)
 
         
 async def fetch_standings_from_api(competition_id, season) -> list:
@@ -62,6 +58,8 @@ async def fetch_standings_from_api(competition_id, season) -> list:
 
 
 def upsert_standings(db: Session, data, competition_id, season):
+
+    season_obj = get_or_create_season(db, season)
 
     existing_standings = db.query(Standing).join(
         Season,
