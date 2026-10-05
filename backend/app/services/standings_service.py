@@ -41,7 +41,20 @@ async def fetch_standings_from_api(competition_id, season) -> list:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()["response"][0]["league"]["standings"][0]
+
+            if response.json().get("errors"):
+                logger.error(
+                    "Api-Football error: %s",
+                    response.json()["errors"]
+                )
+
+                raise HTTPException(
+                    status_code=500,
+                    detail=response.json()["errors"]
+                )
+            
             return data
+        
         
         except httpx.HTTPStatusError as exc:
             logger.exception("API-FOOTBALL returned an error")
@@ -51,9 +64,10 @@ async def fetch_standings_from_api(competition_id, season) -> list:
             )
 
         except Exception as exc:
+            logger.exception("Unexpected error fetching standings")
             raise HTTPException(
                 status_code=500,
-                detail=f"Unexpected error: {str(exc)}"
+                detail="Unexpected error fetching standings"
             )
 
 
@@ -61,13 +75,9 @@ def upsert_standings(db: Session, data, competition_id, season):
 
     season_obj = get_or_create_season(db, season)
 
-    existing_standings = db.query(Standing).join(
-        Season,
-        Season.year == season
-    ).filter(
+    existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
-        ##Standing.season_id == season,
-        Season.year == season
+        Standing.season_id == season_obj.id
     ).all()
     
     existing_map = {
@@ -115,7 +125,10 @@ def upsert_standings(db: Session, data, competition_id, season):
 
 
 def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
+
+    season_obj = get_or_create_season(db, season)
+
     return db.query(Standing).filter(
         Standing.competition_id == competition_id,
-        Standing.season_id == season,
+        Standing.season_id == season_obj.id,
     ).all()
