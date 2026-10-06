@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
 from app.models.season import Season
-from app.services.teams_service import get_or_create_season
+from app.services.teams_service import get_or_create_season, get_teams_db
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,8 @@ async def fetch_standings_from_api(competition_id, season) -> list:
 def upsert_standings(db: Session, data, competition_id, season):
 
     season_obj = get_or_create_season(db, season)
+
+    existing_teams = get_teams_db(db, competition_id, season)
 
     existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
