@@ -77,6 +77,10 @@ def upsert_standings(db: Session, data, competition_id, season):
 
     existing_teams = get_teams_db(db, competition_id, season)
 
+    existing_teams_map = {
+        
+    }
+
     existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
         Standing.season_id == season_obj.id
