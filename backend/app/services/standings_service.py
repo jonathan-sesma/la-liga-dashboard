@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
 from app.models.season import Season
-from app.services.teams_service import get_or_create_season, get_teams_db
+from app.services.teams_service import get_or_create_season, get_teams_db, sync_teams
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,8 @@ def upsert_standings(db: Session, data, competition_id, season):
     existing_teams = get_teams_db(db, competition_id, season)
 
     existing_teams_map = {
-        
+        team.id: team
+        for team in existing_teams
     }
 
     existing_standings = db.query(Standing).filter(
@@ -95,6 +96,7 @@ def upsert_standings(db: Session, data, competition_id, season):
 
         for item in data:
             existing_standing = existing_map.get(item["team"]["id"])
+            existing_team = existing_teams_map.get(item["team"]["id"])
 
             if existing_standing:
                 existing_standing.position = item["rank"]
@@ -107,7 +109,7 @@ def upsert_standings(db: Session, data, competition_id, season):
                 existing_standing.goals_against = item["all"]["goals"]["against"]
                 existing_standing.goal_difference = item["goalsDiff"]
 
-            else:
+            elif(existing_team):
                 new_standing = Standing(
                 team_id=item["team"]["id"],
                 competition_id=competition_id,
@@ -123,6 +125,26 @@ def upsert_standings(db: Session, data, competition_id, season):
                 goal_difference=item["goalsDiff"]
                 )
 
+                db.add(new_standing)
+            else:
+                
+                sync_teams(db, competition_id, season)
+
+                new_standing = Standing(
+                team_id=item["team"]["id"],
+                competition_id=competition_id,
+                season_id=season,
+                position=item["rank"],
+                points=item["points"],
+                played=item["all"]["played"],
+                wins=item["all"]["win"],
+                losses=item["all"]["lose"],
+                draws=item["all"]["draw"],
+                goals_for=item["all"]["goals"]["for"],
+                goals_against=item["all"]["goals"]["against"],
+                goal_difference=item["goalsDiff"]
+                )
+                
                 db.add(new_standing)
         db.commit()
     except Exception:
