@@ -27,8 +27,8 @@ def manual_sync(
 ):
     background_tasks.add_task(
         sync_standings_now,
-        competition_id,
-        season
+        competition_id=competition_id,
+        season=season
     )
     return {"message": "Standings sync has been scheduled in the background"}
     
