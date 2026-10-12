@@ -29,6 +29,10 @@ async def lifespan(app: FastAPI):
         sync_standings_now,
         'interval',
         hours=6,
+        kwargs={
+            "competition_id": 140,
+            "season": 2024,
+        }
     )
     scheduler.start()
     logger.info("Scheduler started for teams and standings every 6 hours.")
