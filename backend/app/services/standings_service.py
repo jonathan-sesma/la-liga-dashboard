@@ -113,7 +113,7 @@ def upsert_standings(db: Session, data, competition_id, season):
                 new_standing = Standing(
                 team_id=item["team"]["id"],
                 competition_id=competition_id,
-                season_id=season,
+                season_id=season_obj.id,
                 position=item["rank"],
                 points=item["points"],
                 played=item["all"]["played"],
