@@ -18,6 +18,8 @@ async def get_or_sync_standings(db: Session, competition_id: int, season: int):
 
     data = await fetch_standings_from_api(competition_id, season)
 
+    check_teams_exist_competition(data, competition_id, season)
+
     upsert_standings(db, data, competition_id, season)
 
     return get_standings_db(db, competition_id, season)
@@ -75,13 +77,6 @@ def upsert_standings(db: Session, data, competition_id, season):
 
     season_obj = get_or_create_season(db, season)
 
-    existing_teams = get_teams_db(db, competition_id, season)
-
-    existing_teams_map = {
-        team.id: team
-        for team in existing_teams
-    }
-
     existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
         Standing.season_id == season_obj.id
@@ -96,7 +91,6 @@ def upsert_standings(db: Session, data, competition_id, season):
 
         for item in data:
             existing_standing = existing_map.get(item["team"]["id"])
-            existing_team = existing_teams_map.get(item["team"]["id"])
 
             if existing_standing:
                 existing_standing.position = item["rank"]
@@ -109,31 +103,11 @@ def upsert_standings(db: Session, data, competition_id, season):
                 existing_standing.goals_against = item["all"]["goals"]["against"]
                 existing_standing.goal_difference = item["goalsDiff"]
 
-            elif(existing_team):
+            else:
                 new_standing = Standing(
                 team_id=item["team"]["id"],
                 competition_id=competition_id,
                 season_id=season_obj.id,
-                position=item["rank"],
-                points=item["points"],
-                played=item["all"]["played"],
-                wins=item["all"]["win"],
-                losses=item["all"]["lose"],
-                draws=item["all"]["draw"],
-                goals_for=item["all"]["goals"]["for"],
-                goals_against=item["all"]["goals"]["against"],
-                goal_difference=item["goalsDiff"]
-                )
-
-                db.add(new_standing)
-            else:
-                
-                sync_teams(db, competition_id, season)
-
-                new_standing = Standing(
-                team_id=item["team"]["id"],
-                competition_id=competition_id,
-                season_id=season,
                 position=item["rank"],
                 points=item["points"],
                 played=item["all"]["played"],
@@ -160,3 +134,28 @@ def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
         Standing.competition_id == competition_id,
         Standing.season_id == season_obj.id,
     ).all()
+
+async def check_teams_exist_competition(data, competition_id, season):
+    teams = get_teams_db(competition_id, season)
+
+    teams_map = {
+        team.id: team
+        for team in teams
+    }
+
+    for item in data:
+
+        existing_team_competition = teams_map.get(item["team"]["id"])
+
+        if existing_team_competition:
+            pass
+
+        else:
+            await sync_teams(competition_id, season)
+
+            teams = get_teams_db(competition_id, season)
+            
+            teams_map = {
+                team.id: team
+                for team in teams
+            }
