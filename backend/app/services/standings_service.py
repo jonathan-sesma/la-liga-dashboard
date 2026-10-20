@@ -42,40 +42,52 @@ async def fetch_standings_from_api(competition_id, season) -> list:
         try:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
-            data = response.json()["response"][0]["league"]["standings"][0]
+            payload = response.json()
 
-            if response.json().get("errors"):
-                logger.error(
-                    "Api-Football error: %s",
-                    response.json()["errors"]
-                )
-
-                raise HTTPException(
-                    status_code=500,
-                    detail=response.json()["errors"]
-                )
-            
-            return data
-        
-        
         except httpx.HTTPStatusError as exc:
-            logger.exception("API-FOOTBALL returned an error")
+            logger.exception("API-Football returned an HTTP error")
             raise HTTPException(
-                status_code=exc.response.status_code,
-                detail="Error fetching standings from API-FOOTBALL"
-            )
+                status_code=502,
+                detail="Error fetching standing from API-FOOTBALL"
+            ) from exc
 
-        except Exception as exc:
-            logger.exception("Unexpected error fetching standings")
+        except (httpx.RequestError, ValueError) as exc:
+            logger.exception("Failed to fetch or parse standings")
             raise HTTPException(
-                status_code=500,
-                detail="Unexpected error fetching standings"
-            )
+                status_code=502,
+                detail="Unable to retrieve standings from API-FOOTBALL"
+            ) from exc
 
+    if payload.get("errors"):
+        logger.error("API-FOOTBALL error: %s", payload["errors"])
+        raise HTTPException(
+            status_code=502,
+            detail="API-FOOTBALL reported an error"
+        )
+
+    responses = payload.get("response", [])
+
+    if not responses:
+        raise HTTPException(
+            status_code=404,
+            detail="No standings found for this competition and season"
+        )
+
+    standings = responses[0]["league"]["standings"]
+
+    if not standings:
+        raise HTTPException(
+            status_code=404,
+            detail="No stanidngs table available"
+        )
+
+    return standings[0]
 
 def upsert_standings(db: Session, data, competition_id, season):
 
     season_obj = get_or_create_season(db, season)
+
+    existing_teams = get_teams_db(db, competition_id, season)
 
     existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
