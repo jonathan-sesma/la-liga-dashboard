@@ -4,39 +4,38 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.config import settings
 from app.models.standing import Standing
-from app.models.season import Season
 from app.services.teams_service import get_or_create_season, get_teams_db, sync_teams
 
 logger = logging.getLogger(__name__)
 
-async def get_or_sync_standings(db: Session, competition_id: int, season: int):
+async def get_or_sync_standings(db: Session, competition_id: int, season_year: int):
 
-    existing = get_standings_db(db, competition_id, season)
+    existing = get_standings_db(db, competition_id, season_year)
 
     if existing:
          return existing
 
-    data = await fetch_standings_from_api(competition_id, season)
+    data = await fetch_standings_from_api(competition_id, season_year)
 
-    check_teams_exist_for_competition(data, competition_id, season)
+    check_teams_exist_for_competition(data, competition_id, season_year)
 
-    upsert_standings(db, data, competition_id, season)
+    upsert_standings(db, data, competition_id, season_year)
 
-    return get_standings_db(db, competition_id, season)
+    return get_standings_db(db, competition_id, season_year)
 
-async def sync_standings(db: Session, competition_id: int, season: int):
+async def sync_standings(db: Session, competition_id: int, season_year: int):
 
-    data = await fetch_standings_from_api(competition_id, season)
+    data = await fetch_standings_from_api(competition_id, season_year)
 
-    upsert_standings(db, data, competition_id, season)
+    upsert_standings(db, data, competition_id, season_year)
 
-    return get_standings_db(db, competition_id, season)
+    return get_standings_db(db, competition_id, season_year)
 
         
-async def fetch_standings_from_api(competition_id, season) -> list:
+async def fetch_standings_from_api(competition_id, season_year) -> list:
 
     headers = {'x-apisports-key': settings.FOOTBALL_API_KEY}
-    url = f"{settings.FOOTBALL_API_URL}/standings?league={competition_id}&season={season}"
+    url = f"{settings.FOOTBALL_API_URL}/standings?league={competition_id}&season={season_year}"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -87,12 +86,12 @@ def upsert_standings(
     db: Session,
     data, 
     competition_id,
-    season
+    season_year
 ):
 
-    season_obj = get_or_create_season(db, season)
+    season_obj = get_or_create_season(db, season_year)
 
-    existing_teams = get_teams_db(db, competition_id, season)
+    existing_teams = get_teams_db(db, competition_id, season_year)
 
     existing_team_ids = {team.id for team in existing_teams}
 
@@ -142,17 +141,17 @@ def upsert_standings(
         db.rollback()
         raise
 
-def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
+def get_standings_db(db: Session, competition_id, season_year) -> list[Standing]:
 
-    season_obj = get_or_create_season(db, season)
+    season_obj = get_or_create_season(db, season_year)
 
     return db.query(Standing).filter(
         Standing.competition_id == competition_id,
         Standing.season_id == season_obj.id,
     ).all()
 
-async def check_teams_exist_for_competition(data, competition_id, season):
-    teams = get_teams_db(competition_id, season)
+async def check_teams_exist_for_competition(data, competition_id, season_year):
+    teams = get_teams_db(competition_id, season_year)
 
     teams_map = {
         team.id: team
@@ -167,9 +166,9 @@ async def check_teams_exist_for_competition(data, competition_id, season):
             pass
 
         else:
-            await sync_teams(competition_id, season)
+            await sync_teams(competition_id, season_year)
 
-            teams = get_teams_db(competition_id, season)
+            teams = get_teams_db(competition_id, season_year)
             
             teams_map = {
                 team.id: team
