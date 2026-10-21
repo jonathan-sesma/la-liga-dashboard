@@ -83,11 +83,18 @@ async def fetch_standings_from_api(competition_id, season) -> list:
 
     return standings[0]
 
-def upsert_standings(db: Session, data, competition_id, season):
+def upsert_standings(
+    db: Session,
+    data, 
+    competition_id,
+    season
+):
 
     season_obj = get_or_create_season(db, season)
 
     existing_teams = get_teams_db(db, competition_id, season)
+
+    existing_team_ids = {team.id for team in existing_teams}
 
     existing_standings = db.query(Standing).filter(
         Standing.competition_id == competition_id,
@@ -100,43 +107,40 @@ def upsert_standings(db: Session, data, competition_id, season):
     }
 
     try:
-
         for item in data:
-            existing_standing = existing_map.get(item["team"]["id"])
+            team_id = item["team"]["id"]
 
-            if existing_standing:
-                existing_standing.position = item["rank"]
-                existing_standing.points = item["points"]
-                existing_standing.played = item["all"]["played"]
-                existing_standing.wins = item["all"]["win"]
-                existing_standing.losses = item["all"]["lose"]
-                existing_standing.draws = item["all"]["draw"]
-                existing_standing.goals_for = item["all"]["goals"]["for"]
-                existing_standing.goals_against = item["all"]["goals"]["against"]
-                existing_standing.goal_difference = item["goalsDiff"]
-
-            else:
-                new_standing = Standing(
-                team_id=item["team"]["id"],
-                competition_id=competition_id,
-                season_id=season_obj.id,
-                position=item["rank"],
-                points=item["points"],
-                played=item["all"]["played"],
-                wins=item["all"]["win"],
-                losses=item["all"]["lose"],
-                draws=item["all"]["draw"],
-                goals_for=item["all"]["goals"]["for"],
-                goals_against=item["all"]["goals"]["against"],
-                goal_difference=item["goalsDiff"]
+            if team_id not in existing_team_ids:
+                raise ValueError(
+                    f"Team {team_id} is missing from the database"
                 )
-                
-                db.add(new_standing)
+
+            standing = existing_map.get(team_id)
+
+            if standing is None:
+                standing = Standing(
+                    team_id=team_id,
+                    competition_id=competition_id,
+                    season_id=season_obj.id,
+                )
+                db.add(standing)
+                existing_map[team_id] = standing
+
+            standing.position = item["rank"]
+            standing.points = item["points"]
+            standing.played = item["all"]["played"]
+            standing.wins = item["all"]["win"]
+            standing.losses = item["all"]["lose"]
+            standing.draws = item["all"]["draw"]
+            standing.goals_for = item["all"]["goals"]["for"]
+            standing.goals_against = item["all"]["goals"]["against"]
+            standing.goal_difference = item["goalsDiff"]
+
         db.commit()
+
     except Exception:
         db.rollback()
         raise
-
 
 def get_standings_db(db: Session, competition_id, season) -> list[Standing]:
 
