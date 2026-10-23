@@ -17,7 +17,7 @@ async def get_or_sync_standings(db: Session, competition_id: int, season_year: i
 
     data = await fetch_standings_from_api(competition_id, season_year)
 
-    check_teams_exist_for_competition(data, competition_id, season_year)
+    await check_teams_exist_for_competition(db, data, competition_id, season_year)
 
     upsert_standings(db, data, competition_id, season_year)
 
@@ -150,13 +150,10 @@ def get_standings_db(db: Session, competition_id, season_year) -> list[Standing]
         Standing.season_id == season_obj.id,
     ).all()
 
-async def check_teams_exist_for_competition(data, competition_id, season_year):
-    teams = get_teams_db(competition_id, season_year)
+async def check_teams_exist_for_competition(db, data, competition_id, season_year):
+    teams = get_teams_db(db, competition_id, season_year)
 
-    teams_map = {
-        team.id: team
-        for team in teams
-    }
+    
 
     for item in data:
 
@@ -168,7 +165,7 @@ async def check_teams_exist_for_competition(data, competition_id, season_year):
         else:
             await sync_teams(competition_id, season_year)
 
-            teams = get_teams_db(competition_id, season_year)
+            teams = get_teams_db(db, competition_id, season_year)
             
             teams_map = {
                 team.id: team
