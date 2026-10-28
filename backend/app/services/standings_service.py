@@ -151,23 +151,27 @@ def get_standings_db(db: Session, competition_id, season_year) -> list[Standing]
     ).all()
 
 async def check_teams_exist_for_competition(db, data, competition_id, season_year):
+
     teams = get_teams_db(db, competition_id, season_year)
 
-    
+    existing_team_ids = {team.id for team in teams}
+    required_team_ids = {item["team"]["id"] for item in data}
 
-    for item in data:
+    missing_team_ids = required_team_ids - existing_team_ids
 
-        existing_team_competition = teams_map.get(item["team"]["id"])
+    # for item in data:
 
-        if existing_team_competition:
-            pass
+    #     existing_team_competition = teams_map.get(item["team"]["id"])
 
-        else:
-            await sync_teams(competition_id, season_year)
+    #     if existing_team_competition:
+    #         pass
 
-            teams = get_teams_db(db, competition_id, season_year)
+    #     else:
+    #         await sync_teams(competition_id, season_year)
+
+    #         teams = get_teams_db(db, competition_id, season_year)
             
-            teams_map = {
-                team.id: team
-                for team in teams
-            }
+    #         teams_map = {
+    #             team.id: team
+    #             for team in teams
+    #         }
