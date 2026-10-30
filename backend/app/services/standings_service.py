@@ -159,6 +159,19 @@ async def check_teams_exist_for_competition(db, data, competition_id, season_yea
 
     missing_team_ids = required_team_ids - existing_team_ids
 
+    if missing_team_ids:
+        await sync_teams(db, competition_id, season_year)
+
+        teams = get_teams_db(db, competition_id, season_year)
+        existing_team_ids = {team.id for team in teams}
+
+        still_missing = required_team_ids - existing_team_ids
+
+        if still_missing:
+            raise ValueError(
+                f"Teams {still_missing} are missing after synchronization"
+            )
+
     # for item in data:
 
     #     existing_team_competition = teams_map.get(item["team"]["id"])
