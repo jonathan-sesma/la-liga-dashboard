@@ -27,6 +27,8 @@ async def sync_standings(db: Session, competition_id: int, season_year: int):
 
     data = await fetch_standings_from_api(competition_id, season_year)
 
+    await check_teams_exist_for_competition(db, data, competition_id, season_year)
+
     upsert_standings(db, data, competition_id, season_year)
 
     return get_standings_db(db, competition_id, season_year)
