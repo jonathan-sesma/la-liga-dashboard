@@ -86,10 +86,10 @@ async def fetch_standings_from_api(competition_id, season_year) -> list:
 
 def upsert_standings(
     db: Session,
-    data, 
-    competition_id,
-    season_year
-):
+    data: list, 
+    competition_id: int,
+    season_year: int,
+) -> None:
 
     season_obj = get_or_create_season(db, season_year)
 
