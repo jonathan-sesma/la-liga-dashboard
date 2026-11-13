@@ -79,7 +79,7 @@ async def fetch_standings_from_api(competition_id, season_year) -> list:
     if not standings:
         raise HTTPException(
             status_code=404,
-            detail="No stanidngs table available"
+            detail="No standings table available"
         )
 
     return standings[0]
@@ -112,8 +112,9 @@ def upsert_standings(
             team_id = item["team"]["id"]
 
             if team_id not in existing_team_ids:
-                raise ValueError(
-                    f"Team {team_id} is missing from the database"
+                raise HTTPException(
+                    status_code=404,
+                    detail="Team not found"
                 )
 
             standing = existing_map.get(team_id)
